@@ -63,3 +63,10 @@ class Twiki():
     response  = self.session.post(twiki_cgi, data=data)
 
     return response
+
+  def set_topic_from_md(self,topic_path,markdown_file):
+    """
+    Takes a Markdown file, converts it to TWiki markup and uploads it.
+    """
+
+    
