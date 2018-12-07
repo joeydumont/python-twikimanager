@@ -4,12 +4,12 @@ TWiki Manager
 
 Interact with TWiki installations via the REST API, in Python.
 
-
-
 Features
 --------
 
 * TODO
+
+  - Find out why the set-topic request results in an [invalid crypt token](http://twiki.org/cgi-bin/view/Support/SID-02381) error
 
 Credits
 -------
