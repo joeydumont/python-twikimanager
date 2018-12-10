@@ -7,6 +7,7 @@
 #                  <http://creativecommons.org/licenses/by-sa/4.0>            #
 # --------------------------------------------------------------------------- #
 import requests
+import urllib3
 import json
 import pypandoc
 from bs4 import BeautifulSoup
@@ -22,7 +23,10 @@ class Twiki():
     # -- Open requests.Session().
     self.session        = requests.Session()
     self.session.auth   = self.auth
-    self.session.verify = False
+    self.session.verify = False if self.settings['auth']['verify'] == "False" else True
+
+    if self.settings['auth']['warnings'] == "Off":
+      urllib3.disable_warnings()
 
   def get_topic(self,topic_path):
     """
@@ -46,7 +50,7 @@ class Twiki():
 
     # -- Grab the crypttoken by editing the page but doing nothing.
     twiki_cgi = "{:s}/bin/edit/{:s}".format(self.url,topic_path)
-    response  = self.session.get(twiki_cgi,verify=False,params=params)
+    response  = self.session.get(twiki_cgi,params=params)
 
     # -- Parse the HTML to get the crypttoken value.
     soup = BeautifulSoup(response.text, 'html.parser')

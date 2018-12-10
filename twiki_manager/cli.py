@@ -95,6 +95,11 @@ def upload_topic_md(ctx,topic_path,markdown_file):
 
   twiki_markup = pypandoc.convert_text(markdown_input, to=os.path.dirname(os.path.realpath(__file__)) + '/../tools/PandocTWikiWriter.lua', format='md')
 
+  click.confirm("You are about to upload your document to the TWiki, \n" +
+                "overwriting the current page. Make sure you have the\n" +
+                "latest version of the page before proceeding.",
+                default=False,
+                abort=True)
   ctx.obj['TWikiObject'].set_topic(topic_path,twiki_markup)
 
 if __name__ == "__main__":
