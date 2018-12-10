@@ -8,6 +8,7 @@
 # --------------------------------------------------------------------------- #
 import requests
 import json
+import pypandoc
 from bs4 import BeautifulSoup
 
 class Twiki():
@@ -36,7 +37,7 @@ class Twiki():
 
     return response
 
-  def set_topic(self,topic_path,topic_text_file):
+  def set_topic(self,topic_path,topic_text):
     """
     Sets a given topic to the given raw Twiki markup stored in a file.
     """
@@ -44,7 +45,7 @@ class Twiki():
                  'password': self.settings['auth']['password']}
 
     # -- Grab the crypttoken by editing the page but doing nothing.
-    twiki_cgi = "{:s}/bin/edit/{:s}".format(url,topic_path)
+    twiki_cgi = "{:s}/bin/edit/{:s}".format(self.url,topic_path)
     response  = self.session.get(twiki_cgi,verify=False,params=params)
 
     # -- Parse the HTML to get the crypttoken value.
@@ -52,10 +53,7 @@ class Twiki():
     crypttoken = soup.find(attrs={"name": "crypttoken"})['value']
     params['crypttoken'] = crypttoken
 
-    with open("response.html", 'r') as read_file:
-      topic_text = read_file.read()
-
-    twiki_cgi = "{:s}/bin/save/{:s}".format(url,topic_path)
+    twiki_cgi = "{:s}/bin/save/{:s}".format(self.url,topic_path)
     data      = {'username': self.settings['auth']['username'],
                  'password': self.settings['auth']['password'],
                  'text': topic_text,
@@ -63,9 +61,3 @@ class Twiki():
     response  = self.session.post(twiki_cgi, data=data)
 
     return response
-
-  def set_topic_from_md(self,topic_path,markdown_file):
-    """
-    Takes a Markdown file, converts it to TWiki markup and uploads it.
-    """
-    
