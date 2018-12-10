@@ -50,6 +50,19 @@ local function escape(s, in_attribute)
     end)
 end
 
+--- Pads str to length len with char from right
+local function lpad(str, len, char)
+    if char == nil then char = ' ' end
+    return str .. string.rep(char, len - #str)
+end
+
+-- Replace line breaks with line breaks + 3 spaces.
+local function IndentLineBreaks(str)
+  str = string.gsub(str, "\n\n","\n")
+  str = string.gsub(str, "\n",  "\n    ")
+  return str
+end
+
 -- Helper function to convert an attributes table into
 -- a string that can be put into HTML tags.
 local function attributes(attr)
@@ -179,6 +192,21 @@ function Note(s)
 end
 
 function Span(s, attr)
+  for x,y in pairs(attr) do
+    local first = 1
+    local last = 1
+    if (x == 'class') then
+      -- Extract the relevant Twiki macro.
+      first,last = string.find(y, 'twiki%-macro ')
+      macro_substring = string.sub(y, last+1,string.len(y))
+
+      if (macro_substring == "USERSIG") then
+        return '%' .. escape(macro_substring,true) .. '{' .. s .. '}%'
+      else
+        return '%' .. escape(macro_substring,true) .. '%'
+      end
+    end
+  end
   return "<span" .. attributes(attr) .. ">" .. s .. "</span>"
 end
 
@@ -232,7 +260,7 @@ end
 function BulletList(items)
   local buffer = {}
   for _, item in pairs(items) do
-    table.insert(buffer, "   * " .. item)
+    table.insert(buffer, "   * " .. IndentLineBreaks(item))
   end
   return table.concat(buffer, "\n")
 end
@@ -240,7 +268,7 @@ end
 function OrderedList(items)
   local buffer = {}
   for _, item in pairs(items) do
-    table.insert(buffer, "   1. " .. item)
+    table.insert(buffer, "   1. " .. IndentLineBreaks(item))
   end
   return table.concat(buffer, "\n")
 end
@@ -277,47 +305,61 @@ end
 -- Caption is a string, aligns is an array of strings,
 -- widths is an array of floats, headers is an array of
 -- strings, rows is an array of arrays of strings.
+-- TODO: Deal with alignment.
 function Table(caption, aligns, widths, headers, rows)
+  -- Buffer to hold the table, and function to tadd to the buffer.
   local buffer = {}
   local function add(s)
-    table.insert(buffer, s)
+    table.insert(buffer,s)
   end
-  add("<table>")
-  if caption ~= "" then
-    add("<caption>" .. caption .. "</caption>")
+
+  -- Determine the longest string in the table, per column.
+  local function tablelength(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
   end
-  if widths and widths[1] ~= 0 then
-    for _, w in pairs(widths) do
-      add('<col width="' .. string.format("%.0f%%", w * 100) .. '" />')
+
+  local max_length = {}
+
+  for i,h in pairs(headers) do
+    table.insert(max_length,string.len(h))
+  end
+
+  for _,row in pairs(rows) do
+    for i,c in pairs(row) do
+      max_length[i] = string.len(c) > max_length[i] and string.len(c) or max_length[i]
     end
   end
+
   local header_row = {}
   local empty_header = true
   for i, h in pairs(headers) do
     local align = html_align(aligns[i])
-    table.insert(header_row,'<th align="' .. align .. '">' .. h .. '</th>')
+    if (align == 'center') then
+      table.insert(header_row, "|  *" .. lpad(h,max_length[i]) .. "*  ")
+    elseif (align == 'right') then
+      table.insert(header_row, "|   *" .. lpad(h,max_length[i]) .. "* ")
+    else
+      table.insert(header_row, "| *" .. lpad(h,max_length[i]) .. "*  ")
+    end
     empty_header = empty_header and h == ""
   end
-  if empty_header then
-    head = ""
-  else
-    add('<tr class="header">')
-    for _,h in pairs(header_row) do
-      add(h)
-    end
-    add('</tr>')
+  table.insert(header_row, " |\n")
+
+  for _,h in pairs(header_row) do
+    add(h)
   end
-  local class = "even"
+
   for _, row in pairs(rows) do
-    class = (class == "even" and "odd") or "even"
-    add('<tr class="' .. class .. '">')
     for i,c in pairs(row) do
-      add('<td align="' .. html_align(aligns[i]) .. '">' .. c .. '</td>')
+      add("| " .. lpad(c,max_length[i]) .. "    ")
     end
-    add('</tr>')
+    add(" |\n")
   end
-  add('</table>')
-  return table.concat(buffer,'\n')
+
+  return table.concat(buffer)
+
 end
 
 function RawBlock(format, str)
