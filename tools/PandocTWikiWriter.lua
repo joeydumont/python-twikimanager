@@ -30,9 +30,12 @@ local image_mime_type = ({
   })[image_format]
   or error("unsupported image format `" .. img_format .. "`")
 
--- Character escaping
+-- Character escaping (now with utf-8)
 local function escape(s, in_attribute)
-  return s:gsub("[<>&\"']",
+
+  -- We escape home common HTML symbols.
+  new_string = ""
+  new_string = new_string:gsub("[<>&]",
     function(x)
       if x == '<' then
         return '&lt;'
@@ -48,6 +51,22 @@ local function escape(s, in_attribute)
         return x
       end
     end)
+
+  -- For TWiki installations that don't support Unicode.
+  -- We replace some common Unicode-only symbols by their closest ASCII
+  -- counterpart.
+  for p, c in utf8.codes(s) do
+    if (c == 0x2019 or c == 0x2018) then
+      new_string = new_string .. "'"
+    elseif (c == 0x201C or c == 0x201D) then
+      new_string = new_string .. '"'
+    elseif (c == 0x00A0) then
+      new_string = new_string .. '&nbsp;'
+    else
+      new_string = new_string .. utf8.char(c)
+    end
+  end
+  return new_string
 end
 
 --- Pads str to length len with char from right
