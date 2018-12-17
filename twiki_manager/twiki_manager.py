@@ -43,7 +43,7 @@ class Twiki():
 
   def set_topic(self,topic_path,topic_text):
     """
-    Sets a given topic to the given raw Twiki markup stored in a file.
+    Sets a given topic to the given raw Twiki markup.
     """
     params    = {'username': self.settings['auth']['username'],
                  'password': self.settings['auth']['password']}

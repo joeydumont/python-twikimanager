@@ -63,7 +63,7 @@ def set_topic(ctx,topic_path,input_file):
   with open(input_file, 'r') as twiki_input:
     topic_text = twiki_input.read()
 
-  response = ctx.obj['TWikiObject'].set_topic(topic_path,)
+  response = ctx.obj['TWikiObject'].set_topic(topic_path,topic_text)
 
   return response
 
